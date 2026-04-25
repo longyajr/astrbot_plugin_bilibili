@@ -114,7 +114,9 @@ class BiliUserDynamicsTool(FunctionTool):
         dynamics = await self.bili_client.get_latest_dynamics(int(uid))
 
         if not dynamics:
-            return "获取该 UP 主动态失败，可能是未登录、UID 无效，或 B 站接口暂时不可用。"
+            return (
+                "获取该 UP 主动态失败，可能是未登录、UID 无效，或 B 站接口暂时不可用。"
+            )
 
         parsed_results = self.parse_dynamics(
             dynamics,
@@ -122,7 +124,9 @@ class BiliUserDynamicsTool(FunctionTool):
         )
 
         payload_blocks: list[str] = []
-        for result, item in zip(parsed_results, dynamics.get("items", []), strict=False):
+        for result, item in zip(
+            parsed_results, dynamics.get("items", []), strict=False
+        ):
             if not result.has_payload():
                 continue
             payload_blocks.append(

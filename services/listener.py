@@ -467,14 +467,8 @@ class DynamicListener:
         if not self.enable_ai_summary:
             return ""
 
-        provider_getter = getattr(self.context, "get_current_chat_provider_id", None)
-        llm_generate = getattr(self.context, "llm_generate", None)
-        if not callable(provider_getter) or not callable(llm_generate):
-            logger.warning("当前 AstrBot 版本不支持插件内直接调用 LLM，已跳过动态摘要。")
-            return ""
-
         try:
-            provider_id = await provider_getter(umo=sub_user)
+            provider_id = await self.context.get_current_chat_provider_id(umo=sub_user)
             if not provider_id:
                 logger.info("会话 %s 未配置聊天模型，已跳过动态摘要。", sub_user)
                 return ""
@@ -482,8 +476,7 @@ class DynamicListener:
             image_urls = [
                 url.strip().replace("http://", "https://")
                 for url in getattr(payload, "image_urls", []) or []
-                if isinstance(url, str) and url.strip()
-                and not url.startswith("data:")
+                if isinstance(url, str) and url.strip() and not url.startswith("data:")
             ][:8]
 
             prompt_text = self._build_ai_summary_prompt(payload)
@@ -492,21 +485,21 @@ class DynamicListener:
 
             if captions:
                 caption_lines = "\n".join(
-                    f"[图片 {i+1}]: {c}" for i, c in enumerate(captions) if c
+                    f"[图片 {i + 1}]: {c}" for i, c in enumerate(captions) if c
                 )
                 if caption_lines:
-                    prompt_text = f"{prompt_text}\n\n该动态包含以下图片：\n{caption_lines}"
+                    prompt_text = (
+                        f"{prompt_text}\n\n该动态包含以下图片：\n{caption_lines}"
+                    )
                 logger.info(
                     "AI摘要: 使用图片转述, prompt_len=%d, images=%d, captions=%d",
                     len(prompt_text),
                     len(image_urls),
                     len(captions),
                 )
-                llm_resp = await llm_generate(
+                llm_resp = await self.context.llm_generate(
                     chat_provider_id=provider_id,
-                    contexts=[
-                        UserMessageSegment(content=[TextPart(text=prompt_text)])
-                    ],
+                    contexts=[UserMessageSegment(content=[TextPart(text=prompt_text)])],
                 )
             else:
                 user_parts: list = [TextPart(text=prompt_text)]
@@ -524,7 +517,7 @@ class DynamicListener:
                     len(image_urls),
                     image_urls,
                 )
-                llm_resp = await llm_generate(
+                llm_resp = await self.context.llm_generate(
                     chat_provider_id=provider_id,
                     contexts=[UserMessageSegment(content=user_parts)],
                 )
@@ -550,14 +543,17 @@ class DynamicListener:
                 [
                     url.strip().replace("http://", "https://")
                     for url in getattr(payload, "image_urls", []) or []
-                    if isinstance(url, str) and url.strip()
+                    if isinstance(url, str)
+                    and url.strip()
                     and not url.startswith("data:")
                 ][:8],
                 start=1,
             ):
                 user_parts.append(
                     ImageURLPart(
-                        image_url=ImageURLPart.ImageURL(url=image_url, id=f"dynamic-{index}")
+                        image_url=ImageURLPart.ImageURL(
+                            url=image_url, id=f"dynamic-{index}"
+                        )
                     )
                 )
 
@@ -567,7 +563,9 @@ class DynamicListener:
                 assistant_message=AssistantMessageSegment(content=summary_text),
             )
         except Exception as e:
-            logger.error("写入动态摘要到会话历史失败: %s\n%s", e, traceback.format_exc())
+            logger.error(
+                "写入动态摘要到会话历史失败: %s\n%s", e, traceback.format_exc()
+            )
 
     async def _send_ai_summary(self, sub_user: str, payload: Any) -> None:
         summary_text = await self._generate_ai_summary(sub_user, payload)
@@ -576,7 +574,9 @@ class DynamicListener:
         await self._persist_ai_summary(sub_user, payload, summary_text)
         await self.context.send_message(
             sub_user,
-            MessageEventResult(chain=[Plain(f"AI 总结:\n{summary_text}")]).use_t2i(False),
+            MessageEventResult(chain=[Plain(f"AI 总结:\n{summary_text}")]).use_t2i(
+                False
+            ),
         )
 
     def _cache_render(self, dyn_id: Optional[str], chain_parts: list, send_node: bool):
