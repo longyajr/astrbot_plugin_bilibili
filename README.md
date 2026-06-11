@@ -1,6 +1,6 @@
 # astrbot_plugin_bilibili
 
-这是一个为 [AstrBot](https://github.com/Soulter/AstrBot) 设计的多功能 Bilibili 插件。
+这是一个为 [AstrBot](https://github.com/AstrBotDevs/AstrBot) 设计的多功能 Bilibili 插件。
 
 ## ✨ 功能特性
 
