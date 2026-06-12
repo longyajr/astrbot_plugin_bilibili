@@ -796,9 +796,10 @@ class DynamicListener:
     def _build_live_payload(live_room: Dict[str, Any], text: str) -> RenderPayload:
         room_id = int(live_room.get("room_id", 0) or 0)
         link = f"https://live.bilibili.com/{room_id}"
+        user_name = str(live_room.get("uname", "Unknown") or "Unknown")
         return RenderPayload(
             banner=image_to_base64(BANNER_PATH),
-            name="AstrBot",
+            name=user_name,
             avatar=image_to_base64(LOGO_PATH),
             title=str(live_room.get("title", "Unknown") or "Unknown"),
             url=link,
