@@ -1,3 +1,8 @@
+## v1.6.2
+- ai总结避免重复
+- 验证图片可用性
+- 几处小调整，pr by [dizzykitty3](https://github.com/dizzykitty3)
+
 ## v1.6.1
 - 进行插件i18n
 - 调整渲染图片的字体相关行为
